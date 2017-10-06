@@ -1,0 +1,17 @@
+   bgp: {
+     neighbor: {
+       acl: {
+         10.0.0.0/8: [
+           accept
+           reject
+         ]
+         class: {
+           ip: 1.1.1.1
+           v4: 2.2.2.2
+         }
+       }
+       address: 192.168.1.1
+       family: inet
+       type: ibgp
+     }
+   }

@@ -1,0 +1,16 @@
+{
+  bgp": {
+    "neighbor": {
+      "family": "inet",
+      "address": "192.168.1.1",
+      "type": "ibgp",
+      "acl": {
+        "10.0.0.0/8": ["accept", "reject"],
+        "class" : {
+          "ip": "1.1.1.1",
+          "v4": "2.2.2.2"
+        }
+      }
+    }
+  }
+}
