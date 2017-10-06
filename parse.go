@@ -1,76 +1,101 @@
-package parsejson
+package modjson
 
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 )
 
-func main() {
-	st := `
-	{
-		"bgp": {
-			"neighbor": {
-				"family": "inet",
-				"address": "192.168.1.1",
-				"type": "ibgp",
-				"acl": {
-					"10.0.0.0/8": ["accept", "reject"],
-					"class" : {
-						"ip": "1.1.1.1",
-						"v4": "2.2.2.2"
-					}
-				}
-			}
-		}
+type Json struct {
+	obj map[string]interface{}
+}
+
+func (j *Json) Obj() map[string]interface{} {
+	if j == nil {
+		return nil
 	}
-	`
+	return j.obj
+}
+
+func Parse(st string) (*Json, error) {
+	j := &Json{}
 	var mr map[string]interface{}
-	err := json.Unmarshal([]byte(st), &mr)
-	if err != nil {
-		fmt.Errorf("error unmarshaling, err:%v", err)
+	if err := json.Unmarshal([]byte(st), &mr); err != nil {
+		return nil, fmt.Errorf("error unmarshaling, err:%v", err)
 	}
-	fmt.Println(mr)
-	printMap(mr, " ")
-	fmt.Println(mr)
-	s, _ := json.Marshal(mr)
-	fmt.Println(string(s))
+	j.obj = mr
+	return j, nil
 }
 
-func printMap(mr map[string]interface{}, indent string) {
-	indent2 := indent + "  "
-	for i, v := range mr {
-		switch c := v.(type) {
+type Indent struct {
+	prefix  string
+	indent  string
+	current string
+}
+
+func (j *Json) Print(prefix string, indent string) string {
+	i := Indent{prefix, indent, ""}
+	return PrintMap(j, i)
+}
+
+// PrintMap prints the map of json according to the provided identation number.
+func PrintMap(j *Json, ind Indent) string {
+	var st string
+	ind.indentIt()
+	var keys []string
+	if j == nil {
+		return "j is nil"
+	}
+	for i := range j.obj {
+		keys = append(keys, i)
+	}
+	sort.SliceStable(keys, func(i, j int) bool {
+		if keys[i] < keys[j] {
+			return true
+		}
+		return false
+	})
+	for _, i := range keys {
+		switch c := j.obj[i].(type) {
 		case map[string]interface{}:
-			if i == "acl" {
-				mr["acl1"] = v
-			}
-			delete(mr, "acl")
-			//continue
-			fmt.Printf("%s%s: {\n", indent2, i)
-			printMap(c, indent2)
-			fmt.Printf("%s}\n", indent2)
+			st = st + fmt.Sprintf("%s%s: {\n", ind.get(), i)
+			st = st + PrintMap(&Json{obj: c}, ind)
+			st = st + fmt.Sprintf("%s}\n", ind.get())
 		case []interface{}:
-			fmt.Printf("%s%s: [\n", indent2, i)
-			printSlice(c, indent2)
-			fmt.Printf("%s]\n", indent2)
+			st = st + fmt.Sprintf("%s%s: [\n", ind.get(), i)
+			st = st + PrintSlice(c, ind)
+			st = st + fmt.Sprintf("%s]\n", ind.get())
 		default:
-			//fmt.Println(c)
-			fmt.Printf("%s%s: %s\n", indent2, i, v)
+			st = st + fmt.Sprintf("%s%s: %s\n", ind.get(), i, j.obj[i])
 		}
 	}
+	return st
 }
 
-func printSlice(sl []interface{}, indent string) {
-	indent2 := indent + "  "
+func PrintSlice(sl []interface{}, ind Indent) string {
+	var st string
+	ind.indentIt()
 	for _, v := range sl {
 		switch c := v.(type) {
 		case map[string]interface{}:
-			printMap(c, indent2)
+			st = st + PrintMap(&Json{obj: c}, ind)
 		case []interface{}:
-			printSlice(c, indent2)
+			st = st + PrintSlice(c, ind)
 		default:
-			//fmt.Println(c)
-			fmt.Printf("%s%s\n", indent2, c)
+			st = st + fmt.Sprintf("%s%s\n", ind.get(), c)
 		}
 	}
+	return st
+}
+
+func (ind *Indent) indentIt() {
+	if ind.current == "" {
+		ind.current = ind.prefix + ind.indent
+		return
+	}
+	ind.current = ind.current + ind.indent
+}
+
+func (ind *Indent) get() string {
+	return ind.current
 }
