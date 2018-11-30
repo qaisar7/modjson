@@ -6,10 +6,12 @@ import (
 	"sort"
 )
 
+// Json is a structured represenation of the json
 type Json struct {
 	obj map[string]interface{}
 }
 
+// Obj returns the structured represenation as a map.
 func (j *Json) Obj() map[string]interface{} {
 	if j == nil {
 		return nil
@@ -17,6 +19,7 @@ func (j *Json) Obj() map[string]interface{} {
 	return j.obj
 }
 
+// Parse parses the given string and returns a Json object.
 func Parse(st string) (*Json, error) {
 	j := &Json{}
 	var mr map[string]interface{}
@@ -27,12 +30,14 @@ func Parse(st string) (*Json, error) {
 	return j, nil
 }
 
+// Indent specifies the indentation.
 type Indent struct {
 	prefix  string
 	indent  string
 	current string
 }
 
+// Print prints the json object.
 func (j *Json) Print(prefix string, indent string) string {
 	i := Indent{prefix, indent, ""}
 	return PrintMap(j, i)
