@@ -21,6 +21,14 @@ func readFile(f string) (string, error) {
 	return string(b), nil
 }
 
+func writeFile(f string, data []byte) error {
+	f = testDataPath + "/" + f
+	if err := ioutil.WriteFile(f, data, 0666); err != nil {
+		return fmt.Errorf("unable to write to file :%s error:%v", f, err)
+	}
+	return nil
+}
+
 func TestParseJson(t *testing.T) {
 	tests := []struct {
 		desc   string
@@ -46,9 +54,17 @@ func TestParseJson(t *testing.T) {
 		if err != nil {
 			t.Errorf("unable to parse to json %v", err)
 		}
-		if diff := diff.Diff(want, j.Print(" ", " ")); diff != "" {
+		got := j.Print(" ", " ")
+		if diff := diff.Diff(want, got); diff != "" {
 			t.Errorf("unexpected diff, (-want, +got)%s", diff)
 		}
-
+		j1, err := Parse(got)
+		if err != nil {
+			t.Errorf("unable to parse to json again %v", err)
+		}
+		got1 := j1.Print(" ", " ")
+		if diff := diff.Diff(got, got1); diff != "" {
+			t.Errorf("unexpected diff, (-got previous, +got new)%s", diff)
+		}
 	}
 }

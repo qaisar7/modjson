@@ -3,6 +3,7 @@
     "neighbor": {
       "family": "inet",
       "address": "192.168.1.1",
+      "version": 4,
       "type": "ibgp",
       "acl": {
         "10.0.0.0/8": ["accept", "reject"],
