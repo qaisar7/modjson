@@ -28,9 +28,49 @@ func (j *Json) Print(prefix string, indent string) string {
 	return st
 }
 
-//SearchByKey searches for they key in the Json and returns the resulting Json
-func (j *Json) SearchByKey(k string) {
+//SearchByKey searches for they key in the Json and returns the resulting object as string.
+func (j *Json) SearchByKey(key string) *string {
+	for k, v := range j.Obj() {
+		if key == k {
+			s := getStringFromValue(v)
+			return &s
+		}
+		if s := searchInterface(key, v); s != nil {
+			return s
+		}
+	}
+	return nil
+}
 
+func searchInterface(key string, v interface{}) *string {
+	switch v.(type) {
+	case map[string]interface{}:
+		t := v.(map[string]interface{})
+		j := &Json{obj: t}
+		s := j.SearchByKey(key)
+		return s
+	case []interface{}:
+		t := v.([]interface{})
+		for _, l := range t {
+			return searchInterface(key, l)
+		}
+	}
+	return nil
+}
+
+func getStringFromValue(v interface{}) string {
+	ind := Indent{"", " ", ""}
+	switch v.(type) {
+	case map[string]interface{}:
+		t := v.(map[string]interface{})
+		j := &Json{obj: t}
+		return PrintMap(j, ind)
+	case []interface{}:
+		t := v.([]interface{})
+		return PrintSlice(t, ind)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }
 
 // Parse parses the given string and returns a Json object.
@@ -42,6 +82,18 @@ func Parse(st string) (*Json, error) {
 	}
 	j.obj = mr
 	return j, nil
+}
+
+func toString(i interface{}) string {
+	switch i.(type) {
+	case int:
+		return fmt.Sprintf("%d", i)
+	case string:
+		return fmt.Sprintf("%q", i)
+	default:
+		fmt.Println("returning default")
+		return fmt.Sprintf("%v", i)
+	}
 }
 
 // PrintMap prints the map of json according to the provided identation number.
@@ -76,18 +128,6 @@ func PrintMap(j *Json, ind Indent) string {
 		}
 	}
 	return st
-}
-
-func toString(i interface{}) string {
-	switch i.(type) {
-	case int:
-		return fmt.Sprintf("%d", i)
-	case string:
-		return fmt.Sprintf("%q", i)
-	default:
-		fmt.Println("returning default")
-		return fmt.Sprintf("%v", i)
-	}
 }
 
 // PrintSlice prints the slice object.
